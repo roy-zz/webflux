@@ -98,7 +98,6 @@ public class ReactiveProgrammingTest {
     void publisherAndSubscriber() {
         SyncPublisher syncPublisher = new SyncPublisher();
         SyncSubscriber syncSubscriber = new SyncSubscriber();
-
         System.out.println("Test Thread: " + Thread.currentThread().getName());
         syncPublisher.subscribe(syncSubscriber);
     }
