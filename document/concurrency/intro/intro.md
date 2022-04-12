@@ -48,7 +48,4 @@ Tomcat의 경우 고객의 요청이 들어왔을 때 스레드 풀에서 스레
 
 **참고 자료**
 
-- https://winterbe.com/posts/2015/04/07/java8-concurrency-tutorial-thread-executor-examples/
-- https://www.geeksforgeeks.org/difference-between-process-and-thread/
-- https://medium.com/@deepshig/concurrency-vs-parallelism-4a99abe9efb8
-- https://www.codeproject.com/Articles/1267757/Concurrency-vs-Parallelism
+- https://jenkov.com/tutorials/java-util-concurrent/blockingqueue.html
