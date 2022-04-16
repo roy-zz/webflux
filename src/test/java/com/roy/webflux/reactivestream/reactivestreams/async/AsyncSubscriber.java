@@ -1,6 +1,6 @@
-package com.roy.webflux.reactive.async;
+package com.roy.webflux.reactivestream.reactivestreams.async;
 
-import com.roy.webflux.reactive.AsyncReactiveTest;
+import com.roy.webflux.reactivestream.reactivestreams.AsyncReactiveTest;
 
 import java.util.Random;
 

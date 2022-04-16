@@ -1,4 +1,4 @@
-package com.roy.webflux.reactive.operators;
+package com.roy.webflux.reactivestream.operators;
 
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;

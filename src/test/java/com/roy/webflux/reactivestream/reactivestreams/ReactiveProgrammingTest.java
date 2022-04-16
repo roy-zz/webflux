@@ -1,7 +1,7 @@
-package com.roy.webflux.reactive;
+package com.roy.webflux.reactivestream.reactivestreams;
 
-import com.roy.webflux.reactive.sync.SyncPublisher;
-import com.roy.webflux.reactive.sync.SyncSubscriber;
+import com.roy.webflux.reactivestream.reactivestreams.sync.SyncPublisher;
+import com.roy.webflux.reactivestream.reactivestreams.sync.SyncSubscriber;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

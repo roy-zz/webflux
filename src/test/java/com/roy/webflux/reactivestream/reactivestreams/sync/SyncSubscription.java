@@ -1,4 +1,4 @@
-package com.roy.webflux.reactive.sync;
+package com.roy.webflux.reactivestream.reactivestreams.sync;
 
 import static java.util.concurrent.Flow.Subscriber;
 import static java.util.concurrent.Flow.Subscription;

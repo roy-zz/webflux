@@ -1,4 +1,4 @@
-package com.roy.webflux.reactive.concurrency;
+package com.roy.webflux.reactivestream.concurrency;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
