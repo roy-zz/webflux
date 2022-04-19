@@ -1,4 +1,4 @@
-package com.roy.webflux.reactivestream.operators;
+package com.roy.webflux.reactivestream.operators.lecture;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
