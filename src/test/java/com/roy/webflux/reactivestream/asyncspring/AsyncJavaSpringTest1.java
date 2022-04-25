@@ -1,7 +1,6 @@
 package com.roy.webflux.reactivestream.asyncspring;
 
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -14,9 +13,11 @@ class AsyncJavaSpringTest1 {
     // 애플리케이션이 실행되고 2초 후에 한번에 HELLO와 EXIT가 출력될 것이다.
     static class OnlyMainThreadTest {
         public static void main(String[] args) throws InterruptedException {
+            log.info("Start Time: {}", LocalDateTime.now());
             TimeUnit.SECONDS.sleep(2);
-            log.info("HELLO");
-            log.info("EXIT");
+            log.info("HELLO, Time: {}", LocalDateTime.now());
+            log.info("EXIT, Time: {}", LocalDateTime.now());
+            log.info("End Time: {}", LocalDateTime.now());
         }
     }
 
@@ -28,13 +29,15 @@ class AsyncJavaSpringTest1 {
     static class UseOtherThreadTest {
         public static void main(String[] args) throws InterruptedException {
             ExecutorService es = Executors.newCachedThreadPool();
+            log.info("Start Time: {}", LocalDateTime.now());
             es.execute(() -> {
                 try {
                     TimeUnit.SECONDS.sleep(2);
-                    log.info("HELLO");
+                    log.info("HELLO, Time: {}", LocalDateTime.now());
                 } catch (InterruptedException e) {}
             });
-            log.info("EXIT");
+            log.info("EXIT, Time: {}", LocalDateTime.now());
+            log.info("End Time: {}", LocalDateTime.now());
         }
     }
 
@@ -50,62 +53,65 @@ class AsyncJavaSpringTest1 {
     static class UseOtherThreadWithReturnTest {
         public static void main(String[] args) throws ExecutionException, InterruptedException {
             ExecutorService es = Executors.newCachedThreadPool();
+            log.info("Start Time: {}", LocalDateTime.now());
             Future<String> future = es.submit(() -> {
                 TimeUnit.SECONDS.sleep(2);
-                log.info("Async");
+                log.info("Async, Time: {}", LocalDateTime.now());
                 return "HELLO";
             });
-            log.info("Future: {}", future.get());
-            log.info("EXIT");
+            log.info("Future: {}, Time: {}", future.get(), LocalDateTime.now());
+            log.info("EXIT, Time: {}", LocalDateTime.now());
         }
     }
 
     // 만약 우리의 메인 스레드가 HELLO를 출력하는 스레드와 동시에 작동하는 상황이라고 가정하고 `EXIT`를 출력하는 코드와 Futere를 get하는 코드의 위치를 바꿔본다.
     // 결과는 애플리케이션 실행과 동시에 `EXIT`가 실행되고 2초 후에 `HELLO`가 출력되었다.
     // 다른 스레드에서 2초 동안 진행되는 작업과 메인 스레드에서의 작업이 동시에 진행되었음을 알 수 있다.
-    @Test
-    void manyThreadParallelTest() throws ExecutionException, InterruptedException {
-        log.info("Start Time: {}", LocalDateTime.now());
-        ExecutorService es = Executors.newCachedThreadPool();
-        Future<String> future1 = es.submit(() -> {
-            TimeUnit.SECONDS.sleep(2);
-            log.info("Async-1");
-            return "HELLO-1";
-        });
-        Future<String> future2 = es.submit(() -> {
-            TimeUnit.SECONDS.sleep(2);
-            log.info("Async-2");
-            return "HELLO-2";
-        });
-        Future<String> future3 = es.submit(() -> {
-            TimeUnit.SECONDS.sleep(2);
-            log.info("Async-3");
-            return "HELLO-3";
-        });
-        log.info("EXIT");
-        log.info("Future-1: {}", future1.get());
-        log.info("Future-2: {}", future2.get());
-        log.info("Future-3: {}", future3.get());
-        log.info("End Time: {}", LocalDateTime.now());
+    static class ManyThreadParallelTest {
+        public static void main(String[] args) throws ExecutionException, InterruptedException {
+            log.info("Start");
+            ExecutorService es = Executors.newCachedThreadPool();
+            Future<String> future1 = es.submit(() -> {
+                TimeUnit.SECONDS.sleep(2);
+                log.info("Async-1");
+                return "HELLO-1";
+            });
+            Future<String> future2 = es.submit(() -> {
+                TimeUnit.SECONDS.sleep(2);
+                log.info("Async-2");
+                return "HELLO-2";
+            });
+            Future<String> future3 = es.submit(() -> {
+                TimeUnit.SECONDS.sleep(2);
+                log.info("Async-3");
+                return "HELLO-3";
+            });
+            log.info("EXIT");
+            log.info("Future-1: {}", future1.get());
+            log.info("Future-2: {}", future2.get());
+            log.info("Future-3: {}", future3.get());
+            log.info("End");
+        }
     }
 
     // Future의 `isDone()` 메서드는 작업 진행여부를 확인한다.
     // `get()` 메서드와는 다르게 블로킹 시키지 않기 때문에 작업이 끝났는지 확인을 해보고 작업이 끝나지 않은 경우 다른 작업을 진행하고 돌아와서 다시 작업 진행유무를 확인할 수 있다.
-    // 예시의 출력을 보면 첫번째 isDone은 작업이 끝나지 않았으므로 false를 반환하고 두번째 isDone은 작업을 끝났음을 의미하는 false를 반환한다.
+    // 예시의 출력을 보면 첫번째 isDone은 작업이 끝나지 않았으므로 false를 반환하고 두번째 isDone은 작업을 끝났음을 의미하는 true를 반환한다.
     // 결국 Future는 결과를 얻어올 수 있는 핸들러와 같은 역할을 하는 것이지 결과 자체는 아니다.
-    @Test
-    void isDoneTest() throws InterruptedException, ExecutionException {
-        ExecutorService es = Executors.newCachedThreadPool();
-        Future<String> future = es.submit(() -> {
-            TimeUnit.SECONDS.sleep(2);
-            log.info("Async");
-            return "HELLO";
-        });
-        log.info("Future.isDone - 1: {}", future.isDone());
-        TimeUnit.SECONDS.sleep(3);
-        log.info("EXIT");
-        log.info("Future.isDone - 2: {}", future.isDone());
-        log.info("Future.get: {}", future.get());
+    static class IsDoneTest {
+        public static void main(String[] args) throws InterruptedException, ExecutionException {
+            ExecutorService es = Executors.newCachedThreadPool();
+            Future<String> future = es.submit(() -> {
+                TimeUnit.SECONDS.sleep(2);
+                log.info("Async");
+                return "HELLO";
+            });
+            log.info("Future.isDone - 1: {}", future.isDone());
+            TimeUnit.SECONDS.sleep(3);
+            log.info("EXIT");
+            log.info("Future.isDone - 2: {}", future.isDone());
+            log.info("Future.get: {}", future.get());
+        }
     }
 
     // Future와 비슷한 방식으로 Javascript에서 많이 사용하는 Callback이 있으며 비동기 프로그래밍을 구현할 때 많이 사용되는 방식이다.
@@ -114,20 +120,22 @@ class AsyncJavaSpringTest1 {
     // 차라리 객체 자체를 전달하고 작업이 완료되면 메서드를 호출해달라고 요청하는 것이 훨씬 익숙한 패턴(커맨드패턴)이다.
     // 지금부터 Future 자체를 Object로 만들어서 Callback과 유사하게 만들어본다.
     // FutureTask는 Future를 구현체며 위에서 살펴본 것과 동일한 결과를 출력한다.
-    @Test
-    void futureTaskTest() throws InterruptedException, ExecutionException {
-        ExecutorService es = Executors.newCachedThreadPool();
-        FutureTask<String> futureTask = new FutureTask<String>(() -> {
-            TimeUnit.SECONDS.sleep(2);
-            log.info("Async");
-            return "HELLO";
-        });
-        es.execute(futureTask);
-        log.info("Future.isDone - 1: {}", futureTask.isDone());
-        TimeUnit.SECONDS.sleep(3);
-        log.info("EXIT");
-        log.info("Future.isDone - 2: {}", futureTask.isDone());
-        log.info("Future.get: {}", futureTask.get());
+
+    static class FutureTaskTest {
+        public static void main(String[] args) throws InterruptedException, ExecutionException {
+            ExecutorService es = Executors.newCachedThreadPool();
+            FutureTask<String> futureTask = new FutureTask<String>(() -> {
+                TimeUnit.SECONDS.sleep(2);
+                log.info("Async");
+                return "HELLO";
+            });
+            es.execute(futureTask);
+            log.info("Future.isDone - 1: {}", futureTask.isDone());
+            TimeUnit.SECONDS.sleep(3);
+            log.info("EXIT");
+            log.info("Future.isDone - 2: {}", futureTask.isDone());
+            log.info("Future.get: {}", futureTask.get());
+        }
     }
 
     // ExecutorService.shutdown은 진행 중인 작업이 끝나면 스레드를 종료(Graceful하게)하라는 의미이며 비동기 작업 자체가 종료되지는 않는다.
