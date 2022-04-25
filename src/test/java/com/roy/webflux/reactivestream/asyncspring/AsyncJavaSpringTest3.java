@@ -14,6 +14,7 @@ import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -66,6 +67,18 @@ public class AsyncJavaSpringTest3 {
     // 이러한 메커니즘을 활용하여 적은 스레드의 수로 동시에 많은 요청을 처리할 수 있다.
 
     // 지금부터 어떠한 방식으로 비동기 서블릿 엔진이 작동하는지 코드로 알아보도록 한다.
+    // /async API에서 처리하는데 2초가 소요되는 heavyJob 메서드를 호출한다. 우리의 서블릿은 동기방식으로 작동하기 때문에 heavyJob을 처리할 때 까지 서블릿의 스레드는 블로킹 되어 있을 것이다.
+    // 이러한 경우 Callable을 사용하여 heavyJob을 비동기로 작동시키면 다른 스레드에서 작업을 처리하게 되면서 문제는 해결된다.
+    // 출력된 결과를 살펴보면 아래와 같다.
+    // 물론 클라이언트가 "HELLO"라는 문자를 보기까지 2초의 시간이 소요되는 것은 동일하지만 서블릿 스레드가 블로킹되지 않았다는 점은 큰 차이라고 볼 수 있다.
+    // 스레드의 `Call async method`라는 문구를 출력한 스레드의 이름을 살펴보면 MvcAsync1인 것을 확인할 수 있다.
+    // 우리가 비동기 방식으로 작동하는 코드를 컨트롤러에서 반환하면 스프링에서 비동기로 해당하는 코드를 실행시킨 후에 작업이 끝나면 반환하게 된다.
+    // 그리고 컨트롤러 메서드에서 출력한 `Call callable async`를 출력한 스레드는 nio-8080-exec-1인 것을 확인할 수 있으며 해당 스레드는 비동기 작업인 heavyJob() 메서드가 종료되기를 기다리지 않고 다음 작업을 처리하기 위해 바로 반환된다.
+    // 이렇게 비동기로 작동하면 서블릿 스레드는 같은 시간동안 많은 요청을 처리할 수 있게 되고 애플리케이션 전반적인 Throughput 이 높아진다.
+
+    // 정말로 Throughput이 높아지는지 간단하게 부하 테스트하는 코드를 작성해본다.
+
+
 
     @Bean
     protected ThreadPoolTaskExecutor springExecutor() {
@@ -81,10 +94,25 @@ public class AsyncJavaSpringTest3 {
     @RequiredArgsConstructor
     public static class MyController {
         private final MySpringService mySpringService;
+        @GetMapping("/sync")
+        public String sync() throws InterruptedException {
+            log.info("Call sync");
+            heavyJob();
+            return "HELLO";
+        }
 
-        @GetMapping("/async")
-        public String async() {
-            return null;
+        @GetMapping("/callable-async")
+        public Callable<String> callableAsync() {
+            log.info("Call callable async");
+            return () -> {
+                log.info("Call async method");
+                heavyJob();
+                return "HELLO";
+            };
+        }
+
+        private void heavyJob() throws InterruptedException {
+            TimeUnit.SECONDS.sleep(2);
         }
     }
 
