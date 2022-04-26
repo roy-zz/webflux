@@ -290,14 +290,163 @@ FutureTask 또한 Future와 동일하게 자바 1.5부터 추가되어 있었으
 
 ---
 
+#### 자연스러운 Callback 구현
 
+이번에는 FutureTask를 사용하여 자연스러운 Callback이 되도록 CallbackFutureTask 메서드를 작성해본다.
+Objects의 RequireNonNull은 검증하는 대상이 null인 경우 즉시 NullPointerException이 발생하기 때문에 절대 null값이 들어가서는 안되는 곳에 많이 사용된다.
+Callback 인터페이스인 SuccessCallback을 생성한다.
+물론 람다 표현식을 사용하기 때문에 자바 1.8 이전 버전은 사용이 불가능한 방식이다.
 
+우리가 새로 정의한 CallbackFutureTask 클래스는 FutureTask를 상속받고 있으며 작업이 완료되었을 때 `done` 메서드를 호출하여 SuccessCallback 인터페이스의 onSuccess 메서드를 호출하도록 구현되어 있다.
+CallbackFutureTask를 테스트하는 CallbackFutureTaskTest 코드를 살펴보면 `CallbackFutureTask` 객체를 생성 시점에 작업이 완료되면 Callback으로 진행되야하는 메서드를 전달하면서 이전보다 자연스러운 Callback을 구현하였다. 
 
+```java
+interface SuccessCallback {
+    void onSuccess(String result);
+}
+
+static class CallbackFutureTask extends FutureTask<String> {
+    private final SuccessCallback successCallback;
+    public CallbackFutureTask(Callable<String> callable, SuccessCallback successCallback) {
+        super(callable);
+        this.successCallback = Objects.requireNonNull(successCallback);
+    }
+    @Override
+    protected void done() {
+        try {
+            successCallback.onSuccess(get());
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+static class CallbackFutureTaskTest {
+    public static void main(String[] args) {
+        ExecutorService es = Executors.newCachedThreadPool();
+        CallbackFutureTask callbackFutureTask = new CallbackFutureTask(() -> {
+            TimeUnit.SECONDS.sleep(2);
+            log.info("Async");
+            return "HELLO";
+        }, result -> {
+            log.info("SuccessCallback.onSuccess: {}", result);
+        });
+        es.execute(callbackFutureTask);
+        es.shutdown();
+    }
+}
+```
+
+출력 결과는 아래와 같다.
+
+```bash
+10:26:25.276 [pool-1-thread-1] - Async
+10:26:25.278 [pool-1-thread-1] - SuccessCallback.onSuccess: HELLO
+```
+
+---
+
+#### 자연스럽고 예외처리까지 가능한 Callback 구현
+
+우리는 이전 예제에서 CallbackFutureTask를 생성하여 Callback 형식으로 비동기로 작업을 처리하는 방법에 대해서 알아보았다.
+우리는 원하는 결과를 얻어올 수는 있었지만 예외가 발생했을 때에 대한 예외처리는 따로 작성하지 않았다. 다른 스레드에서 발생한 예외를 우리는 메인 스레드로 끌어와야한다.
+최근에는 try catch를 사용하는 것보다 Exception Object를 Exception을 처리하는 Callback에 던져주는 방식으로 많이 사용된다.
+이번에는 예외를 처리하는 ExceptionCallback을 만들고 CallbackFutureTask가 ExceptionCallback을 생성자 파라미터로 받을 수 있도록 변경해본다.
+
+FutureTask의 `get()`을 호출할 때 InterruptedException과 ExecutionException을 처리해야한다.
+InterruptedException의 경우 다른 Exception들과는 성향이 다르다.
+단순히 Interrupt 메시지를 받아도 발생하는 예외이기 때문에 스레드에 다시 인터럽트를 걸어서 처리해도 무관하다.
+ExecutionException은 비동기 작업을 수행하다가 예외 상황이 생겼을 때 발생하며 우리가 처리해줘야한다.
+발생한 예외를 ExceptionCallback에게 전달할 때 **ExecutionException은 한 번 가공된 예외이기 때문에 getCause를 사용하여 정확한 원인을 전달**해야한다.
+
+```java
+interface ExceptionCallback {
+    void onError(Throwable t);
+}
+
+static class CallbackFutureHandleExceptionTask extends FutureTask<String> {
+    private final SuccessCallback successCallback;
+    private final ExceptionCallback exceptionCallback;
+    public CallbackFutureHandleExceptionTask(Callable<String> callable,
+                                             SuccessCallback successCallback,
+                                             ExceptionCallback exceptionCallback) {
+        super(callable);
+        this.successCallback = Objects.requireNonNull(successCallback);
+        this.exceptionCallback = Objects.requireNonNull(exceptionCallback);
+    }
+    @Override
+    protected void done() {
+        try {
+            successCallback.onSuccess(get());
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException ee) {
+            exceptionCallback.onError(ee.getCause());
+        }
+    }
+}
+
+static class CallbackFutureHandleExceptionTaskTest {
+    public static void main(String[] args) {
+        ExecutorService es = Executors.newCachedThreadPool();
+        CallbackFutureHandleExceptionTask task = new CallbackFutureHandleExceptionTask(() -> {
+            TimeUnit.SECONDS.sleep(2);
+            if (true) throw new RuntimeException("Async Error Occurred");
+            log.info("Async");
+            return "HELLO";
+        },
+                result -> log.info("onSuccess: {}", result),
+                error -> log.error("onError: {}", error.getMessage()));
+        es.execute(task);
+        es.shutdown();
+    }
+}
+```
+
+CallbackFutureHandleExceptionTaskTest의 코드를 살펴보면 일부러 RuntimeException을 발생시켜서 Exception을 처리하는 Callback으로 전달되도록 하였다.
+`if (true)`를 사용하지 않는 경우 throw new RuntimeException() 이하의 코드는 unreachable 컴파일 오류가 발생하기 때문에 컴파일러를 속이기 위해서 사용하였다.
+
+출력되는 결과는 아래와 같다.
+
+```bash
+10:41:41.695 [pool-1-thread-1] - onError: Async Error Occurred
+```
+
+---
+
+지금까지 자바의 비동기 방식 중 고전적인 방식인 Future를 사용한 방식에 대해서 알아보았다.
+정리해보면 비동기 작업의 결과를 가져오는 방법은 두 가지가 있다.
+첫번째로 Future와 작업의 결과를 담고 있는 핸들러를 리턴받아서 처리하는 방식이 있다. `get()`메서드를 호출할 때 블로킹이 발생하며 예외가 발생하는 경우는 try catch를 사용하여 해결해야한다.
+두번째로 Callback을 구현하여 사용하는 방법이 있다.
+
+자바에서는 어떻게 비동기를 구현하고 있는지 `AsynchronousByteChannel` 코드를 확인해 본다.
+`read()` 메서드를 확인해보면 CompletionHandler를 전달받고 있다.
+CompletionHandler의 내부에는 completed와 failed 두 개의 메서드가 있으며 지금까지 우리가 구현한 방식과 동일하다.
+
+```java
+public interface AsynchronousByteChannel extends AsynchronousChannel {
+    // 생략...
+    <A> void read(ByteBuffer dst,
+                  A attachment,
+                  CompletionHandler<Integer,? super A> handler);
+    // 생략...
+    Future<Integer> read(ByteBuffer dst);
+}
+
+public interface CompletionHandler<V,A> {
+    void completed(V result, A attachment);
+    void failed(Throwable exc, A attachment);
+}
+```
+
+AsynchronousByteChannel의 메서드 중 반환타입이 Future<Integer>인 메서드도 있다.
+우리가 지금까지 살펴본 것과 같이 Future는 바로 반환이 되지만 `get()` 메서드를 호출하는 순간 스레드는 블로킹된다.
+
+지금까지 우리가 만들었던 로직을 살펴보면 비동기를 위한 로직과 서비스를 위한 로직이 하나의 소스 파일에 위치하며 스프링이 지향하는 AOP와는 거리가 멀게 코드를 작성하게 되었다.
+다음 장에서는 이러한 문제를 스프링의 옛 기술(작성일 기준 대략 15년전)을 사용하여 해결해본다.
+
+---
 
 **참고한 강의:**
 
 - https://www.youtube.com/watch?v=aSTuQiPB4Ns&ab_channel=TobyLee
-
-
-
-
