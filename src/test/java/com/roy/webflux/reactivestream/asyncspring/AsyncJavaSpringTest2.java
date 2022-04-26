@@ -2,6 +2,7 @@ package com.roy.webflux.reactivestream.asyncspring;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -21,6 +22,19 @@ import java.util.concurrent.TimeUnit;
 @EnableAsync
 @SpringBootApplication
 public class AsyncJavaSpringTest2 {
+
+    public static void main(String[] args) {
+        try(ConfigurableApplicationContext context = SpringApplication.run(AsyncJavaSpringTest2.class, args)) {}
+    }
+
+    @Bean
+    ApplicationRunner run() {
+        return args -> {
+            // mySyncServiceTest();
+            // myAsyncServiceTest();
+            myListenableAsyncServiceTest();
+        };
+    }
 
     @Service
     public static class MySyncService {
@@ -49,10 +63,6 @@ public class AsyncJavaSpringTest2 {
         }
     }
 
-    public static void main(String[] args) {
-        try(ConfigurableApplicationContext context = SpringApplication.run(AsyncJavaSpringTest2.class, args)) {}
-    }
-
     @Autowired
     private MySyncService mySyncService;
     @Autowired
@@ -60,15 +70,7 @@ public class AsyncJavaSpringTest2 {
     @Autowired
     private MyListenableAsyncService myListenableAsyncService;
 
-    // run을 간단히 컨트롤러라고 생각해본다.
-//    @Bean
-//    ApplicationRunner run() {
-//        return args -> {
-//            // mySyncServiceTest();
-//            // myAsyncServiceTest();
-//            myListenableAsyncServiceTest();
-//        };
-//    }
+
 
     private void mySyncServiceTest() throws InterruptedException {
         log.info("Call run()");
