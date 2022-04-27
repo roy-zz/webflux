@@ -102,9 +102,7 @@ public class WebfluxApplication {
 						emitter.send("<p>Stream " + i + "</p>");
 						Thread.sleep(100);
 					}
-				} catch (Exception e) {
-
-				}
+				} catch (Exception e) {}
 			});
 			return emitter;
 		}

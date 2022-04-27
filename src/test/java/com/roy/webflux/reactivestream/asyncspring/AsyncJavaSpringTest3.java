@@ -98,6 +98,7 @@ public class AsyncJavaSpringTest3 {
         public String sync() throws InterruptedException {
             log.info("Call sync");
             heavyJob();
+            log.info("Finish heavyJob()");
             return "HELLO";
         }
 
@@ -107,11 +108,13 @@ public class AsyncJavaSpringTest3 {
             return () -> {
                 log.info("Call async method");
                 heavyJob();
+                log.info("Finish heavyJob");
                 return "HELLO";
             };
         }
 
-        private void heavyJob() throws InterruptedException {
+        @Async
+        public void heavyJob() throws InterruptedException {
             TimeUnit.SECONDS.sleep(2);
         }
     }
