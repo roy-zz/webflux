@@ -16,6 +16,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 @EnableAsync
@@ -60,12 +62,17 @@ public class WebfluxApplication {
 		// VisualVM을 확인해보면 서블릿 스레드는 하나뿐이며 워커 스레드는 생성되지 않은 것을 확인할 수 있다.
 		// DeferredResult와 NIO를 사용하여 서버의 자원을 최소한으로 사용하면서 최대의 효율을 끌어내는 것이 가능해진다.
 
+		private final AtomicInteger requestCount = new AtomicInteger(0);
 		private final Queue<DeferredResult<String>> results = new ConcurrentLinkedQueue<>();
 		@GetMapping("/deferred-result")
 		public DeferredResult<String> deferredResult() throws InterruptedException {
 			log.info("Call deferred result");
 			DeferredResult<String> dr = new DeferredResult<>();
 			results.add(dr);
+			requestCount.addAndGet(1);
+			if (requestCount.get() == 100) {
+				deferredEvent("Success");
+			}
 			return dr;
 		}
 
@@ -113,13 +120,13 @@ public class WebfluxApplication {
 	}
 
 	@Bean
-	protected ThreadPoolTaskExecutor springExecutor() throws InterruptedException {
-		Thread.sleep(5000);
+	protected ThreadPoolTaskExecutor myExecutors() throws InterruptedException {
 		ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
-		taskExecutor.setCorePoolSize(10);
-		taskExecutor.setMaxPoolSize(20);
-		taskExecutor.setQueueCapacity(50);
-		taskExecutor.setThreadNamePrefix("Spring-Thread-");
+		taskExecutor.setCorePoolSize(100);
+//		taskExecutor.setCorePoolSize(100);
+//		taskExecutor.setMaxPoolSize(20);
+//		taskExecutor.setQueueCapacity(50);
+		taskExecutor.setThreadNamePrefix("my-thread-");
 		return taskExecutor;
 	}
 }

@@ -89,23 +89,51 @@ server:
 
 ### 부하 테스트 
 
-#### Case - 1 (Tomcat Thread 100, Request 100)
+1. Sync Controller (Tomcat Thread 200, Request 100)
 
-톰캣의 스레드를 100개로 지정하고 요청을 100개로 설정하고 테스트를 진행한다.
-필자의 PC에서 VisualVM이 실행되지 않는 오류가 발생하여 Thread
+모든 요청을 처리하는데 2.37초가 소요되었다. 생각보다 빠른 결과다.
 
-1. 동기 컨트롤러
+![](image/sync-result-thread100-request100.png)
 
+하지만 생성된 VisualVM을 통해 생성된 스레드를 보면 `http-nio-8080-exec-*` 스레드가 100개 생성된 것을 볼 수 있다.
+톰캣의 기본 스레드 풀의 크기가 200개이므로 100개의 요청은 당연히 처리가 가능하다.
 
+![](image/sync-thread100-request100.png)
 
+---
 
+2. Sync Controller (Tomcat Thread 20, Request 100)
 
+이번에는 `application.yml` 파일을 아래와 같이 수정하여 톰캣의 스레드 수를 20으로 제한하고 동일한 테스트를 진행한다.
 
+```yaml
+server.tomcat.threads.max: 20
+```
 
+한 번에 처리가능한 양이 줄어들면서 소요되는 속도도 현저하게 떨어지는 것을 확인할 수 있다.
 
+![](image/sync-result-thread20-request100.png)
 
+요청이 들어왔을 때 사용되는 스레드 또한 우리가 제한한 수치인 20을 넘지 않는 것을 확인할 수 있다.
 
+![](image/sync-thread20-request-100.png)
 
+---
+
+3. Async Controller (Tomcat Thread 20, Request 100)
+
+2번 테스트와 동일한 상황에서 비동기 컨트롤러는 어떻게 동작하는지 테스트를 진행한다.
+테스트 결과를 보면 톰캣의 스레드는 20개밖에 안되지만 2초 안에 처리된 것을 확인할 수 있다.
+
+![](image/async-result-thread20-request100.png)
+
+하지만 중요한 것은 작업 스레드의 수다.
+비동기 처리 또한 동기와 유사하게 작업 스레드가 요청 수만큼 생성되어 요청을 처리한 것을 확인할 수 있다.
+
+![](image/async-thread20-request100.png)
+
+결국 이러한 비동기 처리는 요청 수만큼 작업 스레드를 생성하는 사태를 유발하며 적은 리소스로 많은 요청을 처리한다는 비동기 처리의 장점과는 맞지 않는다.
+작업 스레드를 따로 두는 것을 효율적으로 활용하기 위해서는 모든 작업을 작업 스레드에서 처리하는 것이 아니라 일반적인 요청은 서블릿 스레드에서 처리하고 오랜 시간이 걸리는 작업만 작업 스레드를 사용하여 일반 작업과 무거운 작업을 분리해서 활용해야 한다.
 
 ---
 

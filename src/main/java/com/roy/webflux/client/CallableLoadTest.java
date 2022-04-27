@@ -49,8 +49,8 @@ public class CallableLoadTest {
     public static void main(String[] args) throws InterruptedException {
         ExecutorService es = Executors.newFixedThreadPool(1000);
         RestTemplate rt = new RestTemplate();
-        String url = "http://localhost:8080/sync";
-        // String url = "http://localhost:8080/callable-async";
+        // String url = "http://localhost:8080/sync";
+        String url = "http://localhost:8080/callable-async";
 
         StopWatch main = new StopWatch();
         main.start();

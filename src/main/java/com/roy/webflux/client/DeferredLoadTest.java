@@ -26,12 +26,12 @@ public class DeferredLoadTest {
         for (int i = 0; i < 100; i++) {
             es.execute(() -> {
                 int index = sequence.addAndGet(1);
-                // log.info("Thread {}", index);
+                log.info("Thread {}", index);
                 StopWatch sw = new StopWatch();
                 sw.start();
                 rt.getForObject(url, String.class);
                 sw.stop();
-                // log.info("Elapsed: {}, {}", index, sw.getTotalTimeSeconds());
+                log.info("Elapsed: {}, {}", index, sw.getTotalTimeSeconds());
             });
         }
         es.shutdown();
