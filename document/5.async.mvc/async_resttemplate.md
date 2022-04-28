@@ -1,5 +1,6 @@
 우리는 지금까지 [Future](https://imprint.tistory.com/229?category=1067652), [@Async](https://imprint.tistory.com/230?category=1067652), [Modern](https://imprint.tistory.com/234?category=1067652), [Stress Test](https://imprint.tistory.com/236?category=1067652)를 통해서 자바와 스프링의 원시적인 비동기 기술에 대해서 학습하였다.
 이번 장에서는 링크드인의 발표자료를 보면서 서비스간에 통신으로 인해 발생하는 블록킹과 JMC 툴, CyclicBarrier를 통한 스레드 동기화에 대해서 알아보도록 한다.
+모든 코드는 [깃 허브 (링크)](https://github.com/roy-zz/webflux)의 테스트 코드에 있으므로 필요하다면 참고하도록 한다.
 
 ### 개요
 
@@ -11,7 +12,7 @@
 중간에 블록킹 I/O가 발생하지 않는다면 굳이 비동기적으로 작동할 필요없이 빠르게 요청을 처리해서 반환해도 상관없다.
 하지만 서비스단에서 다른 서비스를 호출하는 로직이 많은 경우에 단순히 비동기 서블릿을 사용하는 것만으로는 해결할 수 없는 부분들이 있다.
 
-![](image/linkedin-thread-pool-hell.png)
+![](resttemplate_image/linkedin-thread-pool-hell.png)
 
 `링크드인`에서 `Thread pool Hell`이라는 이름으로 발표한 자료를 확인해본다.
 자바의 스레드 풀은 클라이언트의 요청이 들어오면 풀에서 나와서 처리하고 요청을 처리하고 반납된다.
@@ -26,7 +27,7 @@
 왜 이러한 현상이 발생하는지도 `링크드인`에서 분석하였다. 아래는 요즘 많이 구축하는 서비스 구조이다.
 (링크드인의 발표자료는 pdf파일로 첨부한다.)
 
-![](image/service-oriented-architecture.png)
+![](resttemplate_image/service-oriented-architecture.png)
 
 하나의 클라이언트 요청을 받은 서버가 처리하는 동안에 또 다른 원격 서버에 요청을 보내고 최종적으로 결과를 조합하여 반환하는 형태다.
 백엔드 서버가 최적화가 잘 되어 있어서 요청 하나를 0.1초안에 처리한다고 가정해본다. 
@@ -100,7 +101,7 @@ public class MvcClient {
 
 결과를 확인해보면 작업을 처리할 수 있는 톰캣 스레드는 하나밖에 없지만 처리 시간도 짧기때문에 100개의 처리를 0.2초 대에 처리할 수 있었다
 
-![](image/tomcat-thread-1-with-sync.png)
+![](resttemplate_image/tomcat-thread-1-with-sync.png)
 
 우리가 작성한 코드가 어떻게 작동하는지 `JMC`라는 새로운 툴과 함께 살펴보도록 한다.
 
@@ -122,11 +123,11 @@ Please visit http://www.java.com for information on installing Java.
 
 파일을 다운로드 받으면 `jmc8.2.0_~~~.tar.gz`와 같은 형식의 압축파일이 생기며 해당 파일의 압축을 해제하면 JDK Mission Control이라는 실행프로그램이 나온다.
 
-![](image/download-jmc.png)
+![](resttemplate_image/download-jmc.png)
 
 실행 프로그램을 실행시켜서 아랴와 같은 화면이 나온다면 사용 준비가 완료된 것이다.
 
-![](image/start-jmx.png)
+![](resttemplate_image/start-jmx.png)
 
 ---
 
@@ -135,13 +136,13 @@ Please visit http://www.java.com for information on installing Java.
 이전에 우리는 톰캣 스레드가 하나만 생성되도록 설정값을 변경하여 프로젝트를 실행시켰다.
 정말로 하나만 실행되었는지 `JMC`를 사용하여 확인해본다.
 
-![](image/lookup-jmc-thread.png)
+![](resttemplate_image/lookup-jmc-thread.png)
 
 화면 좌측에서 우리의 애플리케이션을 선택한다. 
 화면의 하단부에 `Threads` 탭을 선택한다.
 `http-nio-8080-exec-*` 스레드가 정말 하나인지 확인한다.
 
-![](image/stacktrace-and-graph.png)
+![](resttemplate_image/stacktrace-and-graph.png)
 
 `Live Thread Graph`를 선택하여 최대 스레드와 현재 스레드와 같은 정보를 확인할 수 있다.
 스레드를 선택하고 `Stack Traces for Selected Threads`를 선택해서 스레드의 실시간 Stacktrace 정보를 확인할 수 있다. 
@@ -238,7 +239,7 @@ for (int i = 0; i < 100; i++) {
 스레드가 생성되는 순서를 살펴보면 이전과 다르게 스레드의 순서가 일정하게 늘어나지 않는 것을 확인할 수 있다.
 출력값만 보더라도 `스레드 동기화가 정상적`으로 이루어진 것을 확인할 수 있다.
 
-![](image/cyclicbarrier-generate-threads.png)
+![](resttemplate_image/cyclicbarrier-generate-threads.png)
 
 ---
 
