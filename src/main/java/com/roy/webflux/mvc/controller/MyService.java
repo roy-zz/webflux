@@ -100,8 +100,6 @@ public class MyService {
                     }, ex3 -> {
                         deferredResult.setErrorResult(ex3.getMessage());
                     });
-
-                    // deferredResult.setResult(Objects.requireNonNull(success2).getBody());
                 }, ex2 -> {
                     deferredResult.setErrorResult(ex2.getMessage());
                 });
