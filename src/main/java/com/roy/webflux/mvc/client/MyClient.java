@@ -16,7 +16,10 @@ public class MyClient {
     public static void main(String[] args) throws InterruptedException, BrokenBarrierException {
         ExecutorService es = Executors.newFixedThreadPool(1000);
         RestTemplate rt = new RestTemplate();
-        String url = "http://localhost:8080/my-service/rest/{idx}";
+        // String url = "http://localhost:8080/my-service/rest/{idx}";
+        // String url = "http://localhost:8080/my-service/async-rest/{idx}";
+        // String url = "http://localhost:8080/my-service/async-netty/{idx}";
+        String url = "http://localhost:8080/my-service/async-custom/{idx}";
         CyclicBarrier barrier = new CyclicBarrier(101);
 
         for (int i = 0; i < 100; i++) {
