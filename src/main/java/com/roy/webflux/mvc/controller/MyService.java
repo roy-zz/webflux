@@ -1,7 +1,9 @@
 package com.roy.webflux.mvc.controller;
 
+import com.roy.webflux.service.MyLogic;
 import io.netty.channel.nio.NioEventLoopGroup;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -46,7 +48,6 @@ public class MyService {
             return nettyRestTemplate.getForEntity("http://localhost:8081/remote-service/{request}", String.class, idx);
         }
 
-        // DeferredResult를 반환하도록 구현하면 바로 값을 반환하는 것이 아니라 언젠가 DeferredResult에 값이 들어오면 들어온 값을 반환하는 방식이다.
         @GetMapping("/my-service/async-custom/{idx}")
         public DeferredResult<String> customAsyncService(@PathVariable String idx) {
             DeferredResult<String> deferredResult = new DeferredResult<>();
@@ -59,17 +60,69 @@ public class MyService {
             });
             return deferredResult;
         }
+
+        @GetMapping("/my-service/async-complex/{idx}")
+        public DeferredResult<String> complexAsyncService(@PathVariable String idx) {
+            DeferredResult<String> deferredResult = new DeferredResult<>();
+
+            ListenableFuture<ResponseEntity<String>> future1 = nettyRestTemplate.getForEntity(
+                    "http://localhost:8081/remote-service-1/{request}", String.class, idx);
+            future1.addCallback(success -> {
+                ListenableFuture<ResponseEntity<String>> future2 = nettyRestTemplate.getForEntity(
+                        "http://localhost:8081/remote-service-2/{request}", String.class, Objects.requireNonNull(success).getBody());
+                future2.addCallback(success2 -> {
+                            deferredResult.setResult(Objects.requireNonNull(success2).getBody());
+                        }, ex2 -> {
+                            deferredResult.setErrorResult(ex2.getMessage());
+                        });
+                }, ex -> {
+                deferredResult.setErrorResult(ex.getMessage());
+            });
+            return deferredResult;
+        }
+
+        @Autowired
+        private MyLogic myLogic;
+
+        @GetMapping("/my-service/async-complex-with-logic/{idx}")
+        public DeferredResult<String> complexAsyncWithService(@PathVariable String idx) {
+            DeferredResult<String> deferredResult = new DeferredResult<>();
+
+            ListenableFuture<ResponseEntity<String>> future1 = nettyRestTemplate.getForEntity(
+                    "http://localhost:8081/remote-service-1/{request}", String.class, idx);
+            future1.addCallback(success -> {
+                ListenableFuture<ResponseEntity<String>> future2 = nettyRestTemplate.getForEntity(
+                        "http://localhost:8081/remote-service-2/{request}", String.class, Objects.requireNonNull(success).getBody());
+                future2.addCallback(success2 -> {
+                    ListenableFuture<String> future3 = myLogic.work(Objects.requireNonNull(success2).getBody());
+                    future3.addCallback(success3 -> {
+                        deferredResult.setResult(success3);
+                    }, ex3 -> {
+                        deferredResult.setErrorResult(ex3.getMessage());
+                    });
+
+                    // deferredResult.setResult(Objects.requireNonNull(success2).getBody());
+                }, ex2 -> {
+                    deferredResult.setErrorResult(ex2.getMessage());
+                });
+            }, ex -> {
+                deferredResult.setErrorResult(ex.getMessage());
+            });
+            return deferredResult;
+        }
+    }
+
+    @Bean
+    public ThreadPoolTaskExecutor myThreadPool() {
+        ThreadPoolTaskExecutor te = new ThreadPoolTaskExecutor();
+        te.setCorePoolSize(1);
+        te.setMaxPoolSize(1);
+        te.initialize();
+        return te;
     }
 
     public static void main(String[] args) {
         SpringApplication.run(MyService.class, args);
     }
 
-    @Bean
-    ThreadPoolTaskExecutor myExecutor() {
-        ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
-        taskExecutor.setCorePoolSize(100);
-        taskExecutor.setThreadNamePrefix("my-service-thread-");
-        return taskExecutor;
-    }
 }

@@ -3,9 +3,7 @@ package com.roy.webflux.mvc.controller;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,11 +16,16 @@ import java.util.concurrent.TimeUnit;
 public class RemoteService {
     @RestController
     public static class RemoteController {
-        @GetMapping("/remote-service/{request}")
-        public String service(@PathVariable String request) throws InterruptedException {
-            log.info("진입");
+        @GetMapping("/remote-service-1/{request}")
+        public String service1(@PathVariable String request) throws InterruptedException {
             TimeUnit.SECONDS.sleep(2);
-            return request;
+            return String.format("remote-service-1: %s", request);
+        }
+
+        @GetMapping("/remote-service-2/{request}")
+        public String service2(@PathVariable String request) throws InterruptedException {
+            TimeUnit.SECONDS.sleep(2);
+            return String.format("remote-service-2: %s", request);
         }
     }
 
@@ -32,11 +35,4 @@ public class RemoteService {
         SpringApplication.run(RemoteService.class, args);
     }
 
-    @Bean
-    ThreadPoolTaskExecutor remoteExecutor() {
-        ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
-        taskExecutor.setCorePoolSize(10);
-        taskExecutor.setThreadNamePrefix("remote-service-thread-");
-        return taskExecutor;
-    }
 }
