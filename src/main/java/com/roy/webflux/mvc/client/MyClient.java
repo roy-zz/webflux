@@ -20,7 +20,11 @@ public class MyClient {
         // String url = "http://localhost:8080/my-service/async-rest/{idx}";
         // String url = "http://localhost:8080/my-service/async-netty/{idx}";
         // String url = "http://localhost:8080/my-service/async-custom/{idx}";
-        String url = "http://localhost:8080/my-service/async-complex/{idx}";
+        // String url = "http://localhost:8080/my-service/async-complex/{idx}";
+        // String url = "http://localhost:8080/callback-hell/resolve/v1/{idx}";
+        // String url = "http://localhost:8080/callback-hell/resolve/v2/{idx}";
+        // String url = "http://localhost:8080/callback-hell/resolve/v3/{idx}";
+        String url = "http://localhost:8080/callback-hell/resolve/v4/{idx}";
         CyclicBarrier barrier = new CyclicBarrier(101);
 
         for (int i = 0; i < 100; i++) {
