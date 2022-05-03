@@ -1,3 +1,5 @@
+### Spring WebFlux Series - 12
+
 [이전 장(링크)](https://imprint.tistory.com/240) 에서는 `AsyncRestTemplate`과 `DeferredResult`를 통해서 비동기 컨트롤러를 구현하였다.
 이번 장에서는 두 기술을 사용하여 여러 외부 통신을 통해서 복잡한 요청구조를 어떻게 처리하는지에 대해서 알아본다.
 모든 코드는 [깃 허브 (링크)](https://github.com/roy-zz/webflux)의 테스트 코드에 있으므로 필요하다면 참고하도록 한다.

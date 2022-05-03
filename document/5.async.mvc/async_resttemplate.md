@@ -1,3 +1,5 @@
+### Spring WebFlux Series - 10
+
 우리는 지금까지 [Future](https://imprint.tistory.com/229?category=1067652), [@Async](https://imprint.tistory.com/230?category=1067652), [Modern](https://imprint.tistory.com/234?category=1067652), [Stress Test](https://imprint.tistory.com/236?category=1067652)를 통해서 자바와 스프링의 원시적인 비동기 기술에 대해서 학습하였다.
 이번 장에서는 링크드인의 발표자료를 보면서 서비스간에 통신으로 인해 발생하는 블록킹과 JMC 툴, CyclicBarrier를 통한 스레드 동기화에 대해서 알아보도록 한다.
 모든 코드는 [깃 허브 (링크)](https://github.com/roy-zz/webflux)의 테스트 코드에 있으므로 필요하다면 참고하도록 한다.

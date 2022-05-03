@@ -18,6 +18,7 @@ import org.springframework.web.client.AsyncRestTemplate;
 import org.springframework.web.context.request.async.DeferredResult;
 
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @EnableAsync
@@ -69,6 +70,26 @@ public class CallbackHellService {
                         dr.setErrorResult(failure1.getMessage());
                     });
             return dr;
+        }
+
+        @GetMapping("/callback-hell/refactoring/v1/{idx}")
+        public DeferredResult<String> callbackHellRefactoring(@PathVariable int idx) {
+            DeferredResult<String> dr = new DeferredResult<>();
+            toCompletableFuture(rt.getForEntity(URL_1, String.class, "hell_" + idx))
+                    .thenCompose(s1 -> toCompletableFuture(rt.getForEntity(URL_2, String.class, s1.getBody())))
+                    .thenCompose(s2 -> toCompletableFuture(myLogic.work(s2.getBody())))
+                    .thenAccept(dr::setResult)
+                    .exceptionally(ex -> {
+                        dr.setErrorResult(ex.getMessage());
+                        return (Void) null;
+                    });
+            return dr;
+        }
+
+        private <T> CompletableFuture<T> toCompletableFuture(ListenableFuture<T> lf) {
+            CompletableFuture<T> cf = new CompletableFuture<>();
+            lf.addCallback(cf::complete, cf::completeExceptionally);
+            return cf;
         }
 
         @GetMapping("/callback-hell/resolve/v1/{idx}")

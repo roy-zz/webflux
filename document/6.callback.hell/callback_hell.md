@@ -1,3 +1,5 @@
+### Spring WebFlux Series - 13
+
 [이전 장(링크)](https://imprint.tistory.com/241) 에서는 `AsyncRestTemplate`과 `DeferredResult`를 통해서 외부 API를 호출할 때 발생하는 블록킹 문제를 해결하였다.
 이번 장에서는 블록킹 문제를 해결하면서 등장한 `Callback Hell`이라는 문제를 해결해보도록 한다.
 모든 코드는 [깃 허브 (링크)](https://github.com/roy-zz/webflux)의 테스트 코드에 있으므로 필요하다면 참고하도록 한다.
