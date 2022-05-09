@@ -1,19 +1,23 @@
 package com.roy.webflux.mvc.controller;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.boot.web.embedded.tomcat.TomcatReactiveWebServerFactory;
+import org.springframework.context.annotation.Bean;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.concurrent.TimeUnit;
 
-@Slf4j
-@EnableAsync
 @SpringBootApplication
 public class RemoteService {
+
+    @Bean
+    TomcatReactiveWebServerFactory tomcatReactiveWebServerFactory() {
+        return new TomcatReactiveWebServerFactory();
+    }
+
     @RestController
     public static class RemoteController {
         @GetMapping("/remote-service-1/{request}")

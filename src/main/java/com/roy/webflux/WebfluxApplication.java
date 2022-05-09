@@ -9,15 +9,12 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.DeferredResult;
-import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter;
 
 import java.util.Queue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 @EnableAsync
@@ -100,19 +97,19 @@ public class WebfluxApplication {
 
 		// 지금까지 자바와 스프링 비동기 기술의 기본이 되는 기술들에 대해서 알아보았다.
 		// 기능적인 부분뿐만 아니라 VisualVM을 통한 리소스 사용량까지 확인해보았다.
-		@GetMapping("/emitter")
-		public ResponseBodyEmitter emitter() {
-			ResponseBodyEmitter emitter = new ResponseBodyEmitter();
-			Executors.newSingleThreadExecutor().submit(() -> {
-				try {
-					for (int i = 1; i <= 50; i++) {
-						emitter.send("<p>Stream " + i + "</p>");
-						Thread.sleep(100);
-					}
-				} catch (Exception e) {}
-			});
-			return emitter;
-		}
+//		@GetMapping("/emitter")
+//		public ResponseBodyEmitter emitter() {
+//			ResponseBodyEmitter emitter = new ResponseBodyEmitter();
+//			Executors.newSingleThreadExecutor().submit(() -> {
+//				try {
+//					for (int i = 1; i <= 50; i++) {
+//						emitter.send("<p>Stream " + i + "</p>");
+//						Thread.sleep(100);
+//					}
+//				} catch (Exception e) {}
+//			});
+//			return emitter;
+//		}
 	}
 
 	public static void main(String[] args) {
